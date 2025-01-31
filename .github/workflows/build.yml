@@ -70,4 +70,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            release-files/*
+            publish-linux/*
+            publish-windows/*
