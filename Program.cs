@@ -4,7 +4,7 @@ using iText.Kernel.Utils;
 Console.WriteLine("Combine PDF - by isitar");
 
 Console.WriteLine("Input Directory");
-var path = Console.ReadLine();
+var path = Console.ReadLine()!;
 var outputFile = Path.Combine(path, "output.pdf");
 
 if (File.Exists(outputFile))
