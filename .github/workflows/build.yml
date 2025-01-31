@@ -7,14 +7,11 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -23,20 +20,52 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
+        
+      - name: build
+        run: dotnet build -c Release
 
-      - name: Build application
-        run: dotnet publish -c Release -r ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -o ./publish
+      - name: Publish Windows
+        run: dotnet publish -c Release -r 'win-x64' --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -o ./publish-windows
 
+      - name: Publish Linux
+        run: dotnet publish -c Release -r 'linux-x64' --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -o ./publish-windows
+        
       - name: Upload Windows Executable
-        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: console-app-windows
-          path: ./publish/*.exe
+          path: ./publish-windows/*.exe
 
       - name: Upload Linux Executable
-        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: console-app-linux
-          path: ./publish/*
+          path: ./publish-linux/*
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: console-app-windows
+          path: ./release-files
+
+      - name: Download Linux Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: console-app-linux
+          path: ./release-files
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}  # Increment versioning as needed
+          name: Release v1.0.${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: |
+            release-files/*
